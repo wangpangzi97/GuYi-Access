@@ -81,7 +81,7 @@
                             <div style="font-size:12px; color:var(--text-tertiary); line-height:1.5;"><?= t('强烈建议开启以防止被抓包破解。客户端需要对应解密逻辑。') ?></div>
                         </div>
                         <div class="ios-switch">
-                            <input type="checkbox" name="api_encrypt" value="1" <?= $conf_api_encrypt=='1'?'checked':'' ?>>
+                            <input type="checkbox" name="api_encrypt" value="1" disabled <?= $conf_api_encrypt=='1'?'checked':'' ?>>
                             <span class="ios-slider"></span>
                         </div>
                     </label>
@@ -163,7 +163,7 @@
                     <input type="hidden" name="csrf_token" value="<?= $csrf_token ?>"><input type="hidden" name="update_pwd" value="1">
                     <div class="e-form-item" style="margin: 0;">
                         <label class="e-label" style="font-size: 13px; margin-bottom: 8px;"><?= t('新密码') ?></label>
-                        <input type="password" name="new_pwd" class="e-input" style="height: 44px; background: var(--bg-layout);" required placeholder="<?= t('输入新密码') ?>">
+                        <input type="password" name="current_pwd" class="e-input" autocomplete="current-password" placeholder="当前密码" required><input type="password" minlength="12" name="new_pwd" class="e-input" style="height: 44px; background: var(--bg-layout);" required placeholder="<?= t('输入新密码') ?>">
                     </div>
                     <div class="e-form-item" style="margin: 0;">
                         <label class="e-label" style="font-size: 13px; margin-bottom: 8px;"><?= t('再次确认') ?></label>
@@ -189,7 +189,7 @@
                     <h4 style="margin:0; font-weight:700; font-size:16px; color:var(--text-primary);"><?= t('导出当前数据') ?></h4>
                 </div>
                 <p style="font-size:13px; color:var(--text-secondary); margin-bottom:24px; line-height:1.6; flex-grow: 1;"><?= t('将当前所有应用、卡密、变量打包下载备份，防患于未然。建议定期备份并妥善保管您的 JSON 文件。') ?></p>
-                <a href="?action=export_system" class="e-btn e-btn-default w-full" style="justify-content:center; height:44px; font-size: 14px; font-weight: 500; border-color: var(--color-primary); color: var(--color-primary); background: transparent;"><i class="ph ph-download-simple"></i> <?= t('一键下载 JSON 备份') ?></a>
+                <form method="POST"><input type="hidden" name="csrf_token" value="<?= $csrf_token ?>"><button name="export_system" value="1" type="submit" class="e-btn e-btn-default w-full" style="justify-content:center; height:44px; font-size: 14px; font-weight: 500; border-color: var(--color-primary); color: var(--color-primary); background: transparent;"><i class="ph ph-download-simple"></i> <?= t('一键下载 JSON 备份') ?></button></form>
             </div>
             
             <div style="background: rgba(239, 68, 68, 0.02); border:1px dashed rgba(239, 68, 68, 0.3); padding: 24px; border-radius: 16px; display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 24px rgba(239,68,68,0.06)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">

@@ -11,7 +11,7 @@
                 <tr>
                     <td class="mono" style="font-size:12px;"><?= date('m-d H:i:s', strtotime($log['access_time'] ?? $log['log_time'] ?? 'now')) ?></td>
                     <td><span class="e-tag e-tag-blue"><?= htmlspecialchars($log['app_name'] ?? 'Sys') ?></span></td>
-                    <td><?php $act=$log['result']??$log['action']??''; echo (strpos($act,'拦截')!==false||strpos($act,'封禁')!==false)?"<span style='color:var(--color-error); font-weight:500;'>{$act}</span>":"<span style='color:var(--text-primary);'>{$act}</span>"; ?></td>
+                    <td><?php $act=htmlspecialchars((string)($log['result']??$log['action']??''),ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8'); echo (strpos($act,'拦截')!==false||strpos($act,'封禁')!==false)?"<span style='color:var(--color-error); font-weight:500;'>{$act}</span>":"<span style='color:var(--text-primary);'>{$act}</span>"; ?></td>
                     <td class="mono" style="font-size:12px; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><?= htmlspecialchars($log['card_code'] ?? $log['details'] ?? '-') ?></td>
                     <td class="mono" style="font-size:12px;"><?= htmlspecialchars($log['ip_address'] ?? '-') ?></td>
                 </tr>

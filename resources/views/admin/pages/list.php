@@ -4,8 +4,8 @@ if (!function_exists('t')) { function t($str) { return $str; } }
 
 $appList = $db->getApps();
 $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
-$perPage = isset($_GET['limit']) ? intval($_GET['limit']) : 20;
-$statusFilter = null; $filterStr = $_GET['filter'] ?? 'all';
+$perPage = isset($_GET['limit']) ? max(1,min(100,intval($_GET['limit']))) : 20;
+$statusFilter = null; $filterStr = is_string($_GET['filter'] ?? null) && in_array($_GET['filter'],['all','unused','active','banned'],true) ? $_GET['filter'] : 'all';
 if ($filterStr === 'unused') $statusFilter = 0; elseif ($filterStr === 'active') $statusFilter = 1; elseif ($filterStr === 'banned') $statusFilter = 2;
 $appFilter = isset($_GET['app_id']) && $_GET['app_id'] !== '' ? intval($_GET['app_id']) : null;
 $typeFilter = ($appFilter !== null && isset($_GET['type']) && $_GET['type'] !== '') ? $_GET['type'] : null;
@@ -41,7 +41,7 @@ $totalPages = ceil($totalCards / $perPage); if ($totalPages > 0 && $page > $tota
 <div class="e-card mb-4 flex items-center gap-4 flex-wrap list-top-bar" style="padding: 16px 24px;">
     <form method="GET" class="flex gap-3 items-center flex-1">
         <input type="hidden" name="tab" value="list">
-        <?php if(isset($_GET['filter'])): ?><input type="hidden" name="filter" value="<?= $_GET['filter'] ?>"><?php endif; ?>
+        <?php if(isset($_GET['filter'])): ?><input type="hidden" name="filter" value="<?= htmlspecialchars($filterStr,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8') ?>"><?php endif; ?>
         <input type="text" name="q" placeholder="<?= t('搜索卡密/设备/备注') ?>" value="<?= htmlspecialchars($_GET['q'] ?? '') ?>" class="e-input" style="max-width:240px;">
         <select name="app_id" class="e-select" style="max-width:160px;" onchange="this.form.submit()">
             <option value=""><?= t('全部应用') ?></option>
@@ -105,7 +105,7 @@ $totalPages = ceil($totalCards / $perPage); if ($totalPages > 0 && $page > $tota
                     <tr>
                         <td style="text-align:center;"><input type="checkbox" name="ids[]" value="<?= $card['id'] ?>" class="row-check" style="accent-color: var(--color-primary);"></td>
                         <td><?= $card['app_id']>0 ? "<span class='e-tag e-tag-blue'>".htmlspecialchars($card['app_name'])."</span>" : "-" ?></td>
-                        <td class="mono font-medium" style="color:var(--color-primary); cursor:pointer;" onclick="copy('<?= $card['card_code'] ?>')"><?= $card['card_code'] ?></td>
+                        <td class="mono font-medium" style="color:var(--color-primary); cursor:pointer;" onclick="copy(<?= js_attr($card['card_code']) ?>)"><?= htmlspecialchars($card['card_code'],ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8') ?></td>
                         <td>
                             <?php
                             if ($card['status'] == 2) echo '<span class="e-tag e-tag-red">' . t('封禁') . '</span>';
