@@ -10,7 +10,7 @@
         const r = document.getElementById('toast-root');
         const d = document.createElement('div');
         d.className = 'toast';
-        d.innerHTML = t==='error' ? '<i class="ph-fill ph-warning-circle" style="color:var(--color-error);font-size:20px;"></i> '+m : '<i class="ph-fill ph-check-circle" style="color:var(--color-success);font-size:20px;"></i> '+m;
+        d.textContent = String(m);
         r.appendChild(d);
         setTimeout(() => { d.style.opacity = '0'; d.style.transform = 'translateY(-20px) scale(0.95)'; setTimeout(()=>d.remove(), 300); }, 3000);
     }
@@ -147,80 +147,7 @@
         const verElement = document.querySelector('.sider-logo .logo-info span:nth-child(2)');
         const localVer = verElement ? verElement.innerText.replace(/^v/i, '').trim() : '2026.10.15';
         
-        fetch('https://cloudvariables.pages.dev/GuYiAccessversionnumbervariable.txt?t=' + Date.now())
-            .then(r => r.text())
-            .then(cloudVer => {
-                if (isManual && btnEl) { btnEl.innerHTML = oldBtnHtml; btnEl.style.pointerEvents = 'auto'; }
-                
-                cloudVer = cloudVer.trim();
-                if (!cloudVer) {
-                    if (isManual) toast('获取云端版本失败', 'error');
-                    return;
-                }
-                
-                const lParts = localVer.split('.').map(Number);
-                const cParts = cloudVer.split('.').map(Number);
-                let hasUpdate = false;
-                
-                for (let i = 0; i < Math.max(lParts.length, cParts.length); i++) {
-                    const l = lParts[i] || 0;
-                    const c = cParts[i] || 0;
-                    if (c > l) { hasUpdate = true; break; }
-                    else if (c < l) { break; }
-                }
-                
-                if (hasUpdate) {
-                    const existing = document.getElementById('sys-update-modal');
-                    if(existing) existing.remove();
-
-                    const overlay = document.createElement('div');
-                    overlay.id = 'sys-update-modal';
-                    overlay.className = 'modal-overlay';
-                    overlay.style.display = 'flex';
-                    overlay.style.zIndex = '9999';
-                    
-                    overlay.innerHTML = `
-                        <div class="modal-content" style="max-width: 380px; margin: auto; animation: modalSlideUp 0.35s cubic-bezier(0.2, 1, 0.3, 1);">
-                            <div class="modal-header" style="border-bottom: none; text-align: center; padding-top: 24px; font-size: 20px;">
-                                <i class="ph-fill ph-rocket-launch" style="color: var(--color-primary); margin-right: 8px;"></i>发现新版本
-                            </div>
-                            <div class="modal-body" style="padding: 0 24px 24px;">
-                                <p style="text-align: center; color: var(--text-secondary); margin-bottom: 20px; font-size: 14px;">检测到系统有可用更新，建议立即升级</p>
-                                
-                                <div style="display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 24px; background: var(--bg-layout); padding: 16px; border-radius: 12px;">
-                                    <div style="text-align: center; flex: 1;">
-                                        <div style="font-size: 12px; color: var(--text-tertiary); margin-bottom: 4px;">当前版本</div>
-                                        <div class="mono" style="color: var(--text-secondary); text-decoration: line-through;">${localVer}</div>
-                                    </div>
-                                    <i class="ph ph-arrow-right" style="color: var(--color-primary); font-size: 20px;"></i>
-                                    <div style="text-align: center; flex: 1;">
-                                        <div style="font-size: 12px; color: var(--color-success); margin-bottom: 4px; font-weight: 600;">最新版本</div>
-                                        <div class="mono" style="color: var(--color-success); font-weight: bold; font-size: 16px;">${cloudVer}</div>
-                                    </div>
-                                </div>
-                                
-                                <div style="background: rgba(59, 130, 246, 0.05); border: 1px dashed rgba(59, 130, 246, 0.2); padding: 14px; border-radius: 12px; margin-bottom: 24px; text-align: left;">
-                                    <div style="font-size: 13px; color: var(--color-primary); font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 4px;"><i class="ph-fill ph-lightbulb"></i> 小白更新指南</div>
-                                    <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.6;">
-                                        直接将当前所有目录删除，重新上传新版本的压缩包解压安装即可。<br><span style="color:var(--color-success); font-weight:500;">系统数据全部存放在数据库中，完全不会丢失，请放心更新。</span>
-                                    </div>
-                                </div>
-
-                                <div style="display: flex; gap: 12px;">
-                                    <button type="button" class="e-btn e-btn-default" style="flex: 1; padding: 0;" onclick="localStorage.setItem('hideUpdateUntil', Date.now() + 2 * 24 * 60 * 60 * 1000); this.closest('.modal-overlay').remove();">暂不更新</button>
-                                    <a href="https://github.com/GuYiovo/GuYi-Access/archive/refs/heads/main.zip" target="_blank" class="e-btn e-btn-primary" style="flex: 1; padding: 0; text-decoration: none; justify-content: center;" onclick="this.closest('.modal-overlay').remove()">立即更新</a>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    document.body.appendChild(overlay);
-                } else if (isManual) {
-                    toast('当前已是最新版本，无需更新', 'ok');
-                }
-            }).catch(e => {
-                if (isManual && btnEl) { btnEl.innerHTML = oldBtnHtml; btnEl.style.pointerEvents = 'auto'; }
-                if (isManual) toast('检测失败，请检查网络连接', 'error');
-            });
+        if (isManual) { if (btnEl) { btnEl.innerHTML=oldBtnHtml; btnEl.style.pointerEvents='auto'; } toast('此安全分支已禁用第三方更新注入，请核对仓库发行说明','ok'); }
     };
     // =============================================================
 
@@ -233,8 +160,7 @@
         }
         const nC = document.getElementById('cloud-notice');
         if (nC && !nC.dataset.loaded) {
-            let _u = atob('aHR0cHM6Ly9jbG91ZHZhcmlhYmxlcy5wYWdlcy5kZXYvR3VZaSBBY2Nlc3Mgbm90aWNlLnR4dA==');
-            fetch(_u+'?t='+Date.now()).then(r=>r.text()).then(t=>{nC.innerHTML=t;nC.dataset.loaded='1'}).catch(()=>nC.innerHTML='同步失败，请检查网络');
+            nC.textContent='此安全分支不加载第三方HTML公告'; nC.dataset.loaded='1';
         }
 
         // 调用刚才封装好的检测逻辑

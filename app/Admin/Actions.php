@@ -1,5 +1,6 @@
 <?php
-if (isset($_GET['action']) && $_GET['action'] === 'export_system') {
+if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['export_system'])) {
+    verifyCSRF();
     ini_set('memory_limit', '512M'); set_time_limit(240);
     if (ob_get_level()) ob_end_clean();
     header('Content-Type: application/json; charset=utf-8');
@@ -21,24 +22,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         if (isset($_POST['create_app'])) {
             $appName = trim($_POST['app_name']); if (empty($appName)) throw new Exception("应用名称不能为空");
-            $db->createApp(htmlspecialchars($appName), htmlspecialchars($_POST['app_version'] ?? ''), htmlspecialchars($_POST['app_notes']));
+            $db->createApp($appName, ($_POST['app_version'] ?? ''), ($_POST['app_notes'] ?? ''));
             $msg = "应用创建成功";
         } elseif (isset($_POST['toggle_app'])) { $db->toggleAppStatus(intval($_POST['app_id'])); $msg = "状态已更新";
         } elseif (isset($_POST['delete_app'])) { $db->deleteApp(intval($_POST['app_id'])); $msg = "应用已删除";
         } elseif (isset($_POST['edit_app'])) { 
             $appName = trim($_POST['app_name']); if (empty($appName)) throw new Exception("应用名称不能为空");
-            $db->updateApp(intval($_POST['app_id']), htmlspecialchars($appName), htmlspecialchars($_POST['app_version'] ?? ''), htmlspecialchars($_POST['app_notes']), htmlspecialchars($_POST['update_url'] ?? ''), isset($_POST['force_update']) ? 1 : 0);
+            $db->updateApp(intval($_POST['app_id']), $appName, ($_POST['app_version'] ?? ''), ($_POST['app_notes'] ?? ''), htmlspecialchars($_POST['update_url'] ?? ''), isset($_POST['force_update']) ? 1 : 0);
             $msg = "信息已更新";
         } elseif (isset($_POST['reset_secret'])) {
             $db->resetAppSecret(intval($_POST['app_id']));
             $msg = "通讯加密密钥 (API Secret) 已重置";
         } elseif (isset($_POST['add_var'])) {
             $varKey = trim($_POST['var_key']); if (empty($varKey)) throw new Exception("变量名不能为空");
-            $db->addAppVariable(intval($_POST['var_app_id']), htmlspecialchars($varKey), htmlspecialchars(trim($_POST['var_value'])), isset($_POST['var_public']) ? 1 : 0);
+            $db->addAppVariable(intval($_POST['var_app_id']), $varKey, trim($_POST['var_value']), isset($_POST['var_public']) ? 1 : 0);
             $msg = "变量添加成功";
         } elseif (isset($_POST['edit_var'])) {
             $varKey = trim($_POST['var_key']); if (empty($varKey)) throw new Exception("变量名不能为空");
-            $db->updateAppVariable(intval($_POST['var_id']), htmlspecialchars($varKey), htmlspecialchars(trim($_POST['var_value'])), isset($_POST['var_public']) ? 1 : 0);
+            $db->updateAppVariable(intval($_POST['var_id']), $varKey, trim($_POST['var_value']), isset($_POST['var_public']) ? 1 : 0);
             $msg = "变量更新成功";
         } elseif (isset($_POST['del_var'])) { $db->deleteAppVariable(intval($_POST['var_id'])); $msg = "变量已删除";
         } elseif (isset($_POST['batch_delete'])) { $count = $db->batchDeleteCards($_POST['ids'] ?? []); $msg = "已删除 {$count} 张";
@@ -67,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif (isset($_POST['unbind_card'])) { $db->resetDeviceBindingByCardId(intval($_POST['id'])); $msg = "已解绑";
         } elseif (isset($_POST['update_pwd'])) {
             $pwd1 = $_POST['new_pwd'] ?? ''; $pwd2 = $_POST['confirm_pwd'] ?? '';
-            if (empty($pwd1)) throw new Exception("密码不能为空"); if ($pwd1 !== $pwd2) throw new Exception("两次密码不一致");
+            if (!password_verify($_POST['current_pwd'] ?? '', (string)$db->getAdminHash())) throw new Exception('当前密码错误'); if (strlen($pwd1)<12) throw new Exception('新密码至少12位'); if ($pwd1 !== $pwd2) throw new Exception("两次密码不一致");
             $db->updateAdminPassword($pwd1); setcookie('admin_trust', '', time() - 3600, '/'); session_destroy(); header('Location: ../login/login.php'); exit;
         } elseif (isset($_POST['update_profile'])) {
             // [新增] 账号头像双修更新逻辑
@@ -77,21 +78,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $avatar_val = '';
             if (isset($_POST['avatar_type']) && $_POST['avatar_type'] === 'upload' && isset($_FILES['admin_avatar_file']) && $_FILES['admin_avatar_file']['error'] === UPLOAD_ERR_OK) {
-                // 回退两级到根目录下的 assets/ResourceStorage
-                $upload_dir = dirname(dirname(__DIR__)) . '/assets/ResourceStorage/';
-                if (!is_dir($upload_dir)) {
-                    @mkdir($upload_dir, 0755, true);
-                }
-                $ext = strtolower(pathinfo($_FILES['admin_avatar_file']['name'], PATHINFO_EXTENSION));
-                if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'])) {
-                    $filename = 'avatar_' . time() . '_' . mt_rand(1000, 9999) . '.' . $ext;
-                    if (move_uploaded_file($_FILES['admin_avatar_file']['tmp_name'], $upload_dir . $filename)) {
-                        $avatar_val = '../assets/ResourceStorage/' . $filename;
-                    }
-                }
+                $avatar_val=safe_avatar($_FILES['admin_avatar_file']);
             }
             if (empty($avatar_val) && isset($_POST['avatar_type']) && $_POST['avatar_type'] === 'url') {
-                $avatar_val = trim($_POST['admin_avatar_url'] ?? '');
+                $avatar_val = safe_image_url(trim($_POST['admin_avatar_url'] ?? ''));
             }
             if (!empty($avatar_val)) {
                 $db->saveSystemSettings(['admin_avatar' => $avatar_val]);
@@ -100,8 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             echo "<script>alert('$msg');location.href='cards.php?tab=settings';</script>"; exit;
         } elseif (isset($_POST['update_settings'])) {
             $db->saveSystemSettings([
-                'site_title' => $conf_site_title, 'favicon' => $conf_favicon, 'admin_avatar' => $conf_avatar, 
-                'api_encrypt' => isset($_POST['api_encrypt']) ? '1' : '0', 'enable_bg_image' => isset($_POST['enable_bg_image']) ? '1' : '0',
+                'api_encrypt' => '1', 'enable_bg_image' => isset($_POST['enable_bg_image']) ? '1' : '0',
                 'bg_img_opacity' => floatval($_POST['bg_img_opacity'] ?? 0.2), 'card_opacity' => floatval($_POST['card_opacity'] ?? 0.7)
             ]);
             $msg = "配置已保存"; echo "<script>alert('$msg');location.href='cards.php?tab=settings';</script>"; exit;
@@ -110,11 +99,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif (isset($_POST['clean_expired'])) { $count = $db->cleanupExpiredCards(); $msg = "已清理 {$count} 张";
         } elseif (isset($_POST['import_system'])) {
             ini_set('memory_limit', '512M'); set_time_limit(240);
-            if (isset($_FILES['backup_file']) && $_FILES['backup_file']['error'] == UPLOAD_ERR_OK) {
+            if (isset($_FILES['backup_file']) && $_FILES['backup_file']['error'] == UPLOAD_ERR_OK && $_FILES['backup_file']['size']<=10485760) {
                 $content = file_get_contents($_FILES['backup_file']['tmp_name']); $data = json_decode($content, true);
-                if (is_array($data)) { $db->importAllData($data); echo "<script>alert('数据已恢复，需重新登录');location.href='cards.php?logout=1';</script>"; exit; } else throw new Exception("无效的格式");
+                if (is_array($data)) { $db->importAllData($data); session_unset(); session_destroy(); echo "<script>alert('数据已恢复，需重新登录');location.href='cards.php?logout=1';</script>"; exit; } else throw new Exception("无效的格式");
             } else throw new Exception("文件上传失败");
         }
-    } catch(Exception $e) { $errorMsg = $e->getMessage(); }
+    } catch(Throwable $e) { error_log('Admin action failure: '.get_class($e)); $errorMsg = ($e instanceof InvalidArgumentException) ? $e->getMessage() : '操作失败，请检查输入或服务器日志'; }
 }
 ?>

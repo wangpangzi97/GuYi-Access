@@ -195,7 +195,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="menu-group"><span><?= t('系统设置') ?></span></div>
             <a href="?tab=settings" class="menu-item <?= $tab == 'settings' ? 'active' : '' ?>"><i class="ph ph-gear"></i> <span><?= t('全局配置') ?></span></a>
             <a href="javascript:void(0);" onclick="checkSystemUpdate(true, this)" class="menu-item data-no-ajax"><i class="ph ph-rocket-launch"></i> <span><?= t('检查更新') ?></span></a>
-            <a href="?logout=1" class="menu-item menu-item-danger data-no-ajax"><i class="ph ph-sign-out"></i> <span><?= t('安全退出') ?></span></a>
+            <form method="POST"><input type="hidden" name="csrf_token" value="<?= $csrf_token ?>"><button name="logout" value="1" type="submit"  class="menu-item menu-item-danger data-no-ajax"><i class="ph ph-sign-out"></i> <span><?= t('安全退出') ?></span></button></form>
         </div>
     </aside>
     
@@ -220,9 +220,9 @@ document.addEventListener('DOMContentLoaded', function() {
             <a href="?tab=settings" class="m-nav-more-item <?= $tab == 'settings' ? 'active' : '' ?>"><i class="ph ph-gear"></i><span><?= t('全局设置') ?></span></a>
             <a href="javascript:void(0);" onclick="checkSystemUpdate(true, this)" class="m-nav-more-item data-no-ajax"><i class="ph ph-rocket-launch"></i><span><?= t('检查更新') ?></span></a>
             
-            <a href="?logout=1" class="m-nav-more-item data-no-ajax" style="color:var(--color-error); background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2);">
+            <form method="POST"><input type="hidden" name="csrf_token" value="<?= $csrf_token ?>"><button name="logout" value="1" type="submit"  class="m-nav-more-item data-no-ajax" style="color:var(--color-error); background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2);">
                 <i class="ph ph-sign-out"></i><span><?= t('安全退出') ?></span>
-            </a>
+            </button></form>
         </div>
     </div>
 
@@ -232,5 +232,5 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="header-user"><span><?= htmlspecialchars($currentAdminUser) ?></span><img src="<?= htmlspecialchars($conf_avatar) ?>" class="header-avatar" alt="Avatar"></div>
         </header>
         <div class="admin-content" id="main" style="will-change: transform, opacity;">
-            <?php if(!empty($msg)): ?><div id="sys-msg" data-msg="<?= $msg ?>" data-type="success" style="display:none;"></div><?php endif; ?>
-            <?php if(!empty($errorMsg)): ?><div id="sys-msg" data-msg="<?= $errorMsg ?>" data-type="error" style="display:none;"></div><?php endif; ?>
+            <?php if(!empty($msg)): ?><div id="sys-msg" data-msg="<?= htmlspecialchars((string)$msg,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8') ?>" data-type="success" style="display:none;"></div><?php endif; ?>
+            <?php if(!empty($errorMsg)): ?><div id="sys-msg" data-msg="<?= htmlspecialchars((string)$errorMsg,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8') ?>" data-type="error" style="display:none;"></div><?php endif; ?>

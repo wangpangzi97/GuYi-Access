@@ -197,7 +197,7 @@ $display_stats = [ 'total' => $dashboardData['stats']['total'], 'active' => $das
                             <tr>
                                 <td class="mono" style="font-size:12px; color:var(--text-tertiary);"><?= date('m-d H:i', strtotime($log['access_time'] ?? $log['log_time'] ?? 'now')) ?></td>
                                 <td><span class="e-tag e-tag-blue" style="border-radius: 6px;"><?= htmlspecialchars($log['app_name'] ?? 'Sys') ?></span></td>
-                                <td><?php $act=$log['result']??$log['action']??''; echo (strpos($act,'拦截')!==false||strpos($act,'封禁')!==false)?"<span style='color:var(--color-error); font-weight:600;'>{$act}</span>":"<span style='color:var(--text-primary); font-weight:500;'>{$act}</span>"; ?></td>
+                                <td><?php $act=htmlspecialchars((string)($log['result']??$log['action']??''),ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8'); echo (strpos($act,'拦截')!==false||strpos($act,'封禁')!==false)?"<span style='color:var(--color-error); font-weight:600;'>{$act}</span>":"<span style='color:var(--text-primary); font-weight:500;'>{$act}</span>"; ?></td>
                                 <td class="mono" style="font-size:12px; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><?= htmlspecialchars($log['card_code'] ?? $log['details'] ?? '-') ?></td>
                             </tr>
                             <?php endforeach; ?>

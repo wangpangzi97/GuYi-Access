@@ -1,27 +1,20 @@
 <?php
-// config/config.php
-// Central application configuration. Installer populates the database credentials and SYS_SECRET.
-
-if (!defined('BASE_PATH')) {
-    define('BASE_PATH', dirname(__DIR__));
+// Only explicit environment variables or ignored local configuration may hold secrets.
+require_once dirname(__DIR__).'/app/Security/Admin.php';
+if (!defined('BASE_PATH')) define('BASE_PATH',dirname(__DIR__));
+$local=getenv('GUYI_CONFIG_FILE') ?: __DIR__.'/local.php';
+if (is_file($local)) require_once $local;
+foreach (['DB_HOST','DB_PORT','DB_NAME','DB_USER','DB_PASS','SYS_SECRET'] as $name) {
+    $v=getenv('GUYI_'.$name); if (!defined($name) && $v!==false) define($name,$v);
 }
-
-ini_set('session.gc_maxlifetime', 315360000);
-session_set_cookie_params(315360000);
-
-// If installation has not completed, guide users to the installer.
-// The root install.php remains as a compatibility entry point.
-if (!defined('DB_INSTALLED_CHECK')) {
-    $current_script = basename($_SERVER['SCRIPT_NAME'] ?? '');
-    $installer_exists = file_exists(BASE_PATH . '/scripts/install.php') || file_exists(BASE_PATH . '/install.php');
-
-    if ($current_script !== 'install.php' && $installer_exists) {
-        $uri = $_SERVER['REQUEST_URI'] ?? '';
-        $is_sub_dir = (strpos($uri, '/admin/') !== false || strpos($uri, '/login/') !== false);
-        header('Location: ' . ($is_sub_dir ? '../install.php' : 'install.php'));
-        exit();
-    }
-}
+$ready=true; foreach(['DB_HOST','DB_PORT','DB_NAME','DB_USER','DB_PASS','SYS_SECRET'] as $name) if (!defined($name)) $ready=false;
+if (!defined('DB_INSTALLED_CHECK') && $ready) define('DB_INSTALLED_CHECK',true);
+if (!$ready && PHP_SAPI!=='cli') { http_response_code(503); header('Content-Type: text/plain; charset=utf-8'); exit('Not configured. Run the CLI installer.'); }
+if (defined('SYS_SECRET') && !preg_match('/^[a-f0-9]{64}$/D',SYS_SECRET)) { http_response_code(503); exit('Rotate SYS_SECRET to 32 random bytes encoded as lowercase hex.'); }
+date_default_timezone_set('UTC');
+ini_set('display_errors','0'); ini_set('log_errors','1');
+ini_set('session.use_strict_mode','1'); ini_set('session.use_only_cookies','1'); ini_set('session.gc_maxlifetime','3600');
+session_set_cookie_params(['lifetime'=>3600,'path'=>'/','secure'=>true,'httponly'=>true,'samesite'=>'Strict']);
 
 if (!defined('CARD_TYPES')) {
     define('CARD_TYPES', [
